@@ -10,4 +10,6 @@ add_executable(VierGewinnt
         src/Board.cpp
         src/Player.cpp
         src/Game.cpp
+        src/GameRepository.cpp
+        src/Replay.cpp
 )

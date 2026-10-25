@@ -50,15 +50,33 @@ void Game::start() {
         if (board.checkWin(player.getSymbol())) {
             board.display();
             std::cout << player.getName() << " hat gewonnen!\n";
+            result = player.getName();
             gameRunning = false;
         }
         else if (board.isFull()) {
             board.display();
             std::cout << "Das Spiel endet unentschieden.\n";
+            result = "Unentschieden";
             gameRunning = false;
         }
         else {
             currentPlayer = currentPlayer == 1 ? 2 : 1;
         }
     }
+}
+
+const std::vector<Move>& Game::getMoves() const {
+    return moves;
+}
+
+const Player& Game::getPlayerOne() const {
+    return playerOne;
+}
+
+const Player& Game::getPlayerTwo() const {
+    return playerTwo;
+}
+
+std::string Game::getResult() const {
+    return result;
 }
