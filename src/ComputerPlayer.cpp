@@ -9,6 +9,16 @@ std::mt19937& generator() {
     static std::mt19937 gen(std::random_device{}());
     return gen;
 }
+
+int countImmediateWins(const Board& board, char symbol) {
+    int wins = 0;
+    for (int column : board.getValidColumns()) {
+        Board simulation = board;
+        simulation.dropPiece(column, symbol);
+        if (simulation.checkWin(symbol)) wins++;
+    }
+    return wins;
+}
 }
 
 int ComputerPlayer::chooseMove(const Board& board, Difficulty difficulty,
@@ -39,26 +49,75 @@ int ComputerPlayer::chooseAmateur(const Board& board) {
 
 int ComputerPlayer::chooseProfi(Board board, char computerSymbol, char humanSymbol) {
     const auto valid = board.getValidColumns();
+    if (valid.empty()) return -1;
 
+    // 1. Direkten Gewinn immer sofort ausspielen.
     for (int column : valid) {
         Board simulation = board;
         simulation.dropPiece(column, computerSymbol);
         if (simulation.checkWin(computerSymbol)) return column;
     }
 
+    // 2. Direkten gegnerischen Gewinn blockieren.
     for (int column : valid) {
         Board simulation = board;
         simulation.dropPiece(column, humanSymbol);
         if (simulation.checkWin(humanSymbol)) return column;
     }
 
-    if (!board.isColumnFull(3)) return 3;
+    // 3. Strategische Bewertung ohne vollständige Minimax-Suche.
+    //    Eigene Doppeldrohungen werden belohnt, gegnerische Gabeln vermieden.
+    static const int order[] = {3, 2, 4, 1, 5, 0, 6};
+    int bestColumn = valid.front();
+    int bestScore = std::numeric_limits<int>::min();
 
-    static const int preferred[] = {2, 4, 1, 5, 0, 6};
-    for (int column : preferred)
-        if (!board.isColumnFull(column)) return column;
+    for (int column : order) {
+        if (board.isColumnFull(column)) continue;
 
-    return -1;
+        Board afterComputer = board;
+        afterComputer.dropPiece(column, computerSymbol);
+
+        int score = evaluateBoard(afterComputer, computerSymbol, humanSymbol);
+
+        // Mitte und zentrale Spalten sind bei Vier gewinnt strategisch wertvoll.
+        score += 28 - 7 * std::abs(3 - column);
+
+        // Eine Gabel erzeugt mindestens zwei direkte Gewinnmöglichkeiten.
+        int ownThreats = countImmediateWins(afterComputer, computerSymbol);
+        if (ownThreats >= 2) score += 4500;
+        else if (ownThreats == 1) score += 350;
+
+        // Einen Zug vermeiden, nach dem der Gegner sofort gewinnen kann.
+        int immediateHumanWins = countImmediateWins(afterComputer, humanSymbol);
+        score -= immediateHumanWins * 9000;
+
+        // Einen Halbzug vorausblicken: gegnerische Antworten simulieren.
+        int worstForkPenalty = 0;
+        for (int humanColumn : afterComputer.getValidColumns()) {
+            Board afterHuman = afterComputer;
+            afterHuman.dropPiece(humanColumn, humanSymbol);
+
+            if (afterHuman.checkWin(humanSymbol)) {
+                worstForkPenalty = std::max(worstForkPenalty, 12000);
+                continue;
+            }
+
+            int humanThreats = countImmediateWins(afterHuman, humanSymbol);
+            if (humanThreats >= 2)
+                worstForkPenalty = std::max(worstForkPenalty, 5000);
+            else if (humanThreats == 1)
+                worstForkPenalty = std::max(worstForkPenalty, 500);
+        }
+
+        score -= worstForkPenalty;
+
+        if (score > bestScore) {
+            bestScore = score;
+            bestColumn = column;
+        }
+    }
+
+    return bestColumn;
 }
 
 int ComputerPlayer::chooseLegend(Board board, char computerSymbol, char humanSymbol) {
