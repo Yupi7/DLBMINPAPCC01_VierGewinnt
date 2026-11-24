@@ -50,6 +50,12 @@ void testUndo() {
     assert(b.getCell(Board::ROWS - 1, 3) == ' ');
 }
 
+void testProfiPrefersCenter() {
+    Board board;
+    assert(ComputerPlayer::chooseMove(
+        board, Difficulty::Profi, 'O', 'X') == 3);
+}
+
 void testProfiWinsAndBlocks() {
     Board win;
     win.dropPiece(0, 'O');
@@ -112,6 +118,7 @@ int main() {
     testDiagonalWins();
     testFullColumn();
     testUndo();
+    testProfiPrefersCenter();
     testProfiWinsAndBlocks();
     testLegendWinsAndBlocks();
     testStatistics();
