@@ -2,22 +2,18 @@
 #define GAME_H
 
 #include "Board.h"
-#include "Player.h"
+#include "ComputerPlayer.h"
 #include "Move.h"
+#include "Player.h"
 
 #include <string>
 #include <vector>
 
 class Game {
-private:
-    Board board;
-    Player playerOne;
-    Player playerTwo;
-    std::vector<Move> moves;
-    std::string result;
-
 public:
-    Game(const Player& playerOne, const Player& playerTwo);
+    Game(const Player& playerOne, const Player& playerTwo,
+         bool playerTwoIsComputer = false,
+         Difficulty difficulty = Difficulty::Amateur);
 
     void start();
 
@@ -25,6 +21,15 @@ public:
     const Player& getPlayerOne() const;
     const Player& getPlayerTwo() const;
     std::string getResult() const;
+
+private:
+    Board board;
+    Player playerOne;
+    Player playerTwo;
+    std::vector<Move> moves;
+    std::string result;
+    bool playerTwoIsComputer;
+    Difficulty difficulty;
 };
 
 #endif
